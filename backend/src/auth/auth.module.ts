@@ -3,11 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Member } from '../members/member.entity';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
+import { TenantScope } from './tenant-scope';
 import { User } from './user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Member]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -19,6 +24,8 @@ import { User } from './user.entity';
       }),
     }),
   ],
-  exports: [JwtModule, PassportModule, TypeOrmModule],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, TenantScope],
+  exports: [JwtModule, PassportModule, TypeOrmModule, TenantScope],
 })
 export class AuthModule {}

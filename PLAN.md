@@ -89,17 +89,17 @@ Four tables from DESIGN.md, plus the denormalized counters and the extra columns
 
 Enforcement is server-side on every request. Client `local_id` is never an authorization input.
 
-- [ ] `POST /auth/login` `{ email, password }` → `{ accessToken, member: { id, localId, role, fullName } }`. Resolve the single `members` row for that user.
-- [ ] JWT payload: `sub` = user id, plus `memberId`, `localId`, `role` (convenience; **re-load member from DB in the guard** so a stale token cannot keep a changed role/local).
-- [ ] Global `JwtAuthGuard` via `APP_GUARD`. Mark only `POST /auth/login` (and health) with `@Public()`.
-- [ ] Request user shape after auth: `{ userId, memberId, localId, role }` from the **member row**, not from the request body.
-- [ ] Shared **query scope**: every entity with `local_id` is queried through a tenant-scoped helper/repository/QueryBuilder that **always** adds `WHERE local_id = :requestLocalId`. New services use this by default.
-- [ ] `announcement_recipients` have no `local_id`: join/filter via parent `announcements.local_id` (or member’s `local_id`) inside that same helper so they cannot be fetched cross-tenant by id alone.
-- [ ] Shared **leadership gate**: `@Roles('leadership')` + global or module `RolesGuard`. Member-only routes omit it. A new leadership endpoint that forgets nothing still has JWT + tenant scope; leadership actions require the role decorator (document this: role is opt-in for write/leadership, tenant scope is default).
-- [ ] **Judgment on “opt-out to be wrong” vs Nest defaults:** tenant `local_id` filter is the default for all resource queries. Bypass only via an explicitly named method (e.g. `unsafeUnscopedQuery`) that we do not use in HTTP handlers.
-- [ ] Reject / ignore `local_id` (and `role`) if present in body or query for authorization. Audience local is always `request.user.localId`.
-- [ ] On authorization **failure** (authenticated user, wrong local or wrong role): one `Logger` line (local ids, member id, path, resource id); no dedicated logging module. Return 404 for cross-local resource ids, 403 for role failures on a resource in the caller’s local.
-- [ ] Health endpoint `GET /health` unauthenticated (compose/README).
+- [x] `POST /auth/login` `{ email, password }` → `{ accessToken, member: { id, localId, role, fullName } }`. Resolve the single `members` row for that user.
+- [x] JWT payload: `sub` = user id, plus `memberId`, `localId`, `role` (convenience; **re-load member from DB in the guard** so a stale token cannot keep a changed role/local).
+- [x] Global `JwtAuthGuard` via `APP_GUARD`. Mark only `POST /auth/login` (and health) with `@Public()`.
+- [x] Request user shape after auth: `{ userId, memberId, localId, role }` from the **member row**, not from the request body.
+- [x] Shared **query scope**: every entity with `local_id` is queried through a tenant-scoped helper/repository/QueryBuilder that **always** adds `WHERE local_id = :requestLocalId`. New services use this by default.
+- [x] `announcement_recipients` have no `local_id`: join/filter via parent `announcements.local_id` (or member’s `local_id`) inside that same helper so they cannot be fetched cross-tenant by id alone.
+- [x] Shared **leadership gate**: `@Roles('leadership')` + global or module `RolesGuard`. Member-only routes omit it. A new leadership endpoint that forgets nothing still has JWT + tenant scope; leadership actions require the role decorator (document this: role is opt-in for write/leadership, tenant scope is default).
+- [x] **Judgment on “opt-out to be wrong” vs Nest defaults:** tenant `local_id` filter is the default for all resource queries. Bypass only via an explicitly named method (e.g. `unsafeUnscopedQuery`) that we do not use in HTTP handlers.
+- [x] Reject / ignore `local_id` (and `role`) if present in body or query for authorization. Audience local is always `request.user.localId`.
+- [x] On authorization **failure** (authenticated user, wrong local or wrong role): one `Logger` line (local ids, member id, path, resource id); no dedicated logging module. Return 404 for cross-local resource ids, 403 for role failures on a resource in the caller’s local.
+- [x] Health endpoint `GET /health` unauthenticated (compose/README).
 
 ---
 
