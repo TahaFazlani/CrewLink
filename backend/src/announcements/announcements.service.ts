@@ -1,12 +1,10 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { AuthUser } from '../auth/auth-user';
 import { TenantScope } from '../auth/tenant-scope';
+import { isUniqueViolation } from '../common/pg-errors';
+import { Member } from '../members/member.entity';
 import { AnnouncementRecipient } from './announcement-recipient.entity';
 import { Announcement } from './announcement.entity';
 import {
@@ -15,6 +13,7 @@ import {
   toMemberAnnouncement,
 } from './announcement.views';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
+import { SendAnnouncementDto } from './dto/send-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
 @Injectable()
@@ -104,6 +103,75 @@ export class AnnouncementsService {
       id,
     )) as Announcement;
     return toLeadershipAnnouncement(updated);
+  }
+
+  async send(user: AuthUser, id: string, dto: SendAnnouncementDto = {}) {
+    await this.tenant.getByIdOrNotFound(Announcement, id);
+
+    const sent = await this.dataSource.transaction(async (manager) => {
+      const locked = await manager
+        .createQueryBuilder(Announcement, 'a')
+        .setLock('pessimistic_write')
+        .where('a.id = :id', { id })
+        .andWhere('a.localId = :localId', { localId: user.localId })
+        .getOne();
+      if (!locked) {
+        throw new NotFoundException();
+      }
+      if (locked.status === 'sent') {
+        return locked;
+      }
+      if (locked.status !== 'approved') {
+        throw new ConflictException(
+          'Only approved announcements can be sent',
+        );
+      }
+
+      const audienceQb = manager
+        .createQueryBuilder(Member, 'm')
+        .where('m.localId = :localId', { localId: user.localId })
+        .andWhere('m.role = :role', { role: 'member' })
+        .andWhere('m.status = :status', { status: 'active' });
+      if (dto?.classification) {
+        audienceQb.andWhere('m.classification = :classification', {
+          classification: dto.classification,
+        });
+      }
+      const audience = await audienceQb.getMany();
+
+      if (audience.length > 0) {
+        const rows = audience.map((member) => ({
+          announcementId: locked.id,
+          memberId: member.id,
+          status: 'queued' as const,
+          attemptCount: 0,
+          readAt: null,
+          acknowledgedAt: null,
+          attendanceResponse: null,
+          sentAt: null,
+          nextAttemptAt: null,
+        }));
+        try {
+          await manager
+            .createQueryBuilder()
+            .insert()
+            .into(AnnouncementRecipient)
+            .values(rows)
+            .execute();
+        } catch (err) {
+          if (!isUniqueViolation(err)) {
+            throw err;
+          }
+        }
+      }
+
+      locked.status = 'sent';
+      locked.sentAt = new Date();
+      await manager.save(locked);
+      return locked;
+    });
+
+    return toLeadershipAnnouncement(sent);
   }
 
   async listForMember(user: AuthUser) {

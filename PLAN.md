@@ -119,7 +119,7 @@ All routes below inherit Phase 3 guards. Paths are proposals (see ambiguities).
 - [x] `GET /announcements/:id` — one announcement + counters (`sentCount`, `readCount`, `acknowledgedCount`). 404 if other local.
 - [x] `PATCH /announcements/:id` — edit `title`/`body`/`notificationPreview`/`needsAck` only while `status = draft`.
 - [x] `POST /announcements/:id/approve` — `draft → approved`. Reject if not draft.
-- [ ] `POST /announcements/:id/send` — see Phase 5. Reject if not `approved`. Idempotent if already `sent` (no second recipient insert; unique constraint is the backstop).
+- [x] `POST /announcements/:id/send` — see Phase 5. Reject if not `approved`. Idempotent if already `sent` (no second recipient insert; unique constraint is the backstop).
 - [x] Do **not** expose member PII list endpoints for other locals. No “list all members” required for the leadership screen (counts only).
 
 ### Members (inbox for `role = member`; leadership uses leadership routes)
@@ -145,23 +145,23 @@ All routes below inherit Phase 3 guards. Paths are proposals (see ambiguities).
 
 Synchronous Send (fast):
 
-- [ ] Guard: caller is leadership; `announcement.local_id == caller.local_id`; `status == approved`.
-- [ ] In **one DB transaction**:
-  - [ ] Lock the announcement row (`SELECT … FOR UPDATE`) so a retried/concurrent Send cannot double-insert.
-  - [ ] Re-read status; if already `sent`, return success with existing id/counters (no-op).
-  - [ ] Resolve audience: `members` where `local_id = announcement.local_id` AND `role = 'member'` AND `status = 'active'` AND optional `classification`. Leadership is excluded.
-  - [ ] Bulk-insert `announcement_recipients` (`status = queued`). Unique `(announcement_id, member_id)` makes a second insert a hard failure — catch unique violation and treat as already queued/sent.
-  - [ ] Set announcement `status = sent`, `sent_at = now()` (per judgment above). Do **not** wait for workers.
-- [ ] Return 202 or 200 with announcement id + counters (queued not yet in `sent_count`). **Proposal:** 202 Accepted.
+- [x] Guard: caller is leadership; `announcement.local_id == caller.local_id`; `status == approved`.
+- [x] In **one DB transaction**:
+  - [x] Lock the announcement row (`SELECT … FOR UPDATE`) so a retried/concurrent Send cannot double-insert.
+  - [x] Re-read status; if already `sent`, return success with existing id/counters (no-op).
+  - [x] Resolve audience: `members` where `local_id = announcement.local_id` AND `role = 'member'` AND `status = 'active'` AND optional `classification`. Leadership is excluded.
+  - [x] Bulk-insert `announcement_recipients` (`status = queued`). Unique `(announcement_id, member_id)` makes a second insert a hard failure — catch unique violation and treat as already queued/sent.
+  - [x] Set announcement `status = sent`, `sent_at = now()` (per judgment above). Do **not** wait for workers.
+- [x] Return 202 with announcement id + counters (queued not yet in `sent_count`).
 
 Asynchronous worker (scheduled task, not in-request):
 
-- [ ] `@Cron` / interval job in `NotificationsModule` (all API instances may run it — **this is why SKIP LOCKED matters**).
-- [ ] Each tick: `BEGIN`; `SELECT … FROM announcement_recipients WHERE status = 'queued' AND (next_attempt_at IS NULL OR next_attempt_at <= now()) ORDER BY id LIMIT :batch FOR UPDATE SKIP LOCKED`; process batch; `COMMIT`.
-- [ ] Delivery adapter: **mock** — log member id + announcement id (no FCM). Success → `status = sent`, `sent_at = now()`, increment `announcements.sent_count` **in the same transaction**.
-- [ ] On adapter throw: increment `attempt_count`, set `next_attempt_at = now() + WORKER_RETRY_DELAY_MS` (fixed delay), or `status = failed` after max attempts. Never insert a second recipient row.
-- [ ] Worker **skips** rows already `sent` (they will not match the queued predicate).
-- [ ] Document the honest limitation from DESIGN.md: mock adapter is in-process; a crash after “provider” success and before commit could theoretically duplicate at a real provider. Out of scope.
+- [x] `@Cron` scheduled task in `NotificationsModule` (`WORKER_CRON`, default every 2s). Skip when `WORKER_ENABLED=false`.
+- [x] Each tick: `SELECT … FROM announcement_recipients WHERE status = 'queued' AND (next_attempt_at IS NULL OR next_attempt_at <= now()) ORDER BY id LIMIT :batch FOR UPDATE SKIP LOCKED`; process batch in one transaction.
+- [x] Delivery adapter: **mock** — log member id + announcement id (no FCM). Success → `status = sent`, `sent_at = now()`, increment `announcements.sent_count` in the same transaction.
+- [x] On adapter throw: increment `attempt_count`, set `next_attempt_at = now() + WORKER_RETRY_DELAY_MS` (fixed delay); `status = failed` after 3 attempts. Never insert a second recipient row.
+- [x] Worker **skips** rows already `sent` (they will not match the queued predicate).
+- [x] Honest limitation documented on the mock adapter (crash after provider ACK vs commit).
 
 Optional devops bonus (only if spine is solid):
 
@@ -221,7 +221,7 @@ Brief README requires evidence for Rule 1 (cross-local) and Rule 2 (no double se
 
 - [ ] **Cross-local access test:** login as Local 27 leadership (or member); `GET /announcements/:id` (and member GET) for an announcement that belongs to Local 99 → not 200 with that local’s data. Same for a Local 99 member id used against Local 27-only routes. Assert no other-local member PII in the body.
 - [ ] **Member cannot use leadership actions:** member JWT on `POST /announcements/:id/send` (and approve/ai-draft) → 403.
-- [ ] **Double-send test:** create/approve/send; call `POST /announcements/:id/send` a second time; assert no duplicate `announcement_recipients` rows. **Do not** add a concurrent-worker race test; document SKIP LOCKED safety in the README instead.
+- [x] **Double-send test:** create/approve/send; call `POST /announcements/:id/send` a second time; assert no duplicate `announcement_recipients` rows. **Do not** add a concurrent-worker race test; document SKIP LOCKED safety in the README instead.
 - [ ] Seed + compose smoke: login four accounts; member `GET` + `acknowledge` on a sent item in their local; counters increment once (idempotent ack).
 - [ ] Retired/suspended members are not in a new send’s recipient set.
 

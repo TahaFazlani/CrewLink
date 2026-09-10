@@ -2,11 +2,14 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
 } from '@nestjs/common';
 import {
+  ApiAcceptedResponse,
   ApiBearerAuth,
   ApiOperation,
   ApiTags,
@@ -16,6 +19,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
+import { SendAnnouncementDto } from './dto/send-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
 @Controller('announcements')
@@ -57,5 +61,22 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Move a draft to approved (required before send)' })
   approve(@Param('id') id: string) {
     return this.announcements.approve(id);
+  }
+
+  @Post(':id/send')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary:
+      'Queue recipients asynchronously; returns immediately. Idempotent if already sent.',
+  })
+  @ApiAcceptedResponse({
+    description: 'Announcement marked sent; recipient rows queued (or no-op)',
+  })
+  send(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SendAnnouncementDto = {},
+  ) {
+    return this.announcements.send(user, id, dto);
   }
 }

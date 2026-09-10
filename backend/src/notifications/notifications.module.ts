@@ -1,5 +1,12 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AnnouncementRecipient } from '../announcements/announcement-recipient.entity';
+import { Announcement } from '../announcements/announcement.entity';
+import { MockDeliveryAdapter } from './mock-delivery.adapter';
+import { SendWorker } from './send.worker';
 
-/** Mock delivery adapter + scheduled send worker (Phase 5). */
-@Module({})
+@Module({
+  imports: [TypeOrmModule.forFeature([Announcement, AnnouncementRecipient])],
+  providers: [MockDeliveryAdapter, SendWorker],
+})
 export class NotificationsModule {}
