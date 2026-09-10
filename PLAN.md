@@ -183,6 +183,8 @@ Isolated from send. Slow/down AI must not block or corrupt Send.
 
 ---
 
+Dev seed (pre–Phase 7): `npm run seed:dev` — 2 locals, 4 logins only. Not a substitute for the full seed below.
+
 ## Phase 7 — Seed script
 
 Re-runnable (wipe-or-upsert documented). Match DESIGN.md / brief numbers.

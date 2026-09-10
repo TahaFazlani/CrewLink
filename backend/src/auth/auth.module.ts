@@ -7,6 +7,7 @@ import { Member } from '../members/member.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { LeadershipController } from './leadership.controller';
 import { TenantScope } from './tenant-scope';
 import { User } from './user.entity';
 
@@ -24,7 +25,7 @@ import { User } from './user.entity';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, LeadershipController],
   providers: [AuthService, JwtStrategy, TenantScope],
   exports: [JwtModule, PassportModule, TypeOrmModule, TenantScope],
 })

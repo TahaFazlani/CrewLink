@@ -17,6 +17,11 @@ After Postgres is up, apply schema from `backend/`:
 
 ```bash
 npm run migration:run
+npm run seed:dev
 ```
 
-Full run steps, test accounts, and curl examples land in Phase 10.
+Swagger: http://localhost:3001/api/docs (compose) or http://localhost:3000/api/docs (local API). Authorize with `Bearer` + `accessToken` from `POST /auth/login`.
+
+Dev logins (password `password123`): `leadership.27@crewlink.local`, `member.27@crewlink.local`, `leadership.99@crewlink.local`, `member.99@crewlink.local`.
+
+Full Phase 7 seed (~2,000 members) is later. Full run steps and Test Accounts land in Phase 10.
