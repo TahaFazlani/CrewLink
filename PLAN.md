@@ -204,14 +204,14 @@ Re-runnable (wipe-or-upsert documented). Match DESIGN.md / brief numbers.
 
 Unstyled is acceptable. No member UI.
 
-- [ ] Single page (e.g. `/`) after login: title + body fields, optional “messy note” + **Draft with AI**, **Approve**, **Send**, classification optional select, **needs ack** checkbox.
-- [ ] Local: display caller’s local name/id; not a picker of all locals.
-- [ ] After send (or when viewing the seeded announcement): show **sent / read / acknowledged** from `GET /announcements/:id`.
-- [ ] Poll that GET every **3–5 seconds** (design: 3–5s) while the announcement is `sent` and the page is open. Do not query recipient rows from the UI.
-- [ ] Login form (email/password) storing JWT for API calls (`NEXT_PUBLIC_API_URL`).
-- [ ] AI: paste note → call ai-draft → fill title/body/preview; user can edit; cannot Send until Approve succeeded (disable Send while `draft`; enable after `approved`).
-- [ ] Error display if AI fails; Send still works for a manual approved draft.
-- [ ] Optional: load seeded announcement id from env or a tiny “open existing id” input so reviewers can watch counters without sending again.
+- [x] Single page (e.g. `/`) after login: title + body fields, optional “messy note” + **Draft with AI**, **Approve**, **Send**, classification optional select, **needs ack** checkbox.
+- [x] Local: display caller’s local name/id; not a picker of all locals.
+- [x] After send (or when viewing the seeded announcement): show **sent / read / acknowledged** from `GET /announcements/:id`.
+- [x] Poll that GET every **3–5 seconds** (design: 3–5s) while the announcement is `sent` and the page is open. Do not query recipient rows from the UI.
+- [x] Login form (email/password) storing JWT for API calls (`NEXT_PUBLIC_API_URL`).
+- [x] AI: paste note → call ai-draft → fill title/body/preview; user can edit; cannot Send until Approve succeeded (disable Send while `draft`; enable after `approved`).
+- [x] Error display if AI fails; Send still works for a manual approved draft.
+- [x] Optional: load seeded announcement id from env or a tiny “open existing id” input so reviewers can watch counters without sending again.
 
 ---
 
