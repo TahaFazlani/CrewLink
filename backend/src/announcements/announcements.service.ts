@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { AiDraftService } from '../ai/ai-draft.service';
 import type { AuthUser } from '../auth/auth-user';
 import { TenantScope } from '../auth/tenant-scope';
 import { isUniqueViolation } from '../common/pg-errors';
@@ -21,6 +22,7 @@ export class AnnouncementsService {
   constructor(
     private readonly tenant: TenantScope,
     @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly aiDrafts: AiDraftService,
   ) {}
 
   async create(user: AuthUser, dto: CreateAnnouncementDto) {
@@ -42,6 +44,15 @@ export class AnnouncementsService {
     );
     const row = await this.tenant.getByIdOrNotFound(Announcement, saved.id);
     return toLeadershipAnnouncement(row as Announcement);
+  }
+
+  async createFromNote(user: AuthUser, note: string) {
+    const drafted = await this.aiDrafts.draftFromNote(note);
+    return this.create(user, {
+      title: drafted.title,
+      body: drafted.body,
+      notificationPreview: drafted.notificationPreview,
+    });
   }
 
   async listForLeadership() {

@@ -173,13 +173,13 @@ Optional devops bonus (only if spine is solid):
 
 Isolated from send. Slow/down AI must not block or corrupt Send.
 
-- [ ] `POST /announcements/ai-draft` (leadership) body `{ note: string }` → `{ title, body, notificationPreview }` from the model. **Does not** insert recipient rows. **Proposal:** also persist a new `announcements` row as `status = draft` with those fields so the UI can approve/send by id. Alternative: return text only and let `POST /announcements` save — pick one. **Prefer persist-as-draft** so the state machine is in the DB.
-- [ ] Prompt: informal note → clear title, body, preview ≤ 120 chars.
-- [ ] Timeout + error mapping: provider down/slow → 503/504 with message; no status change to `approved`/`sent`; no worker involvement.
-- [ ] `POST /announcements/:id/approve` is the only path `draft → approved`.
-- [ ] `POST /announcements/:id/send` **rejects** unless `status === 'approved'` (not `draft`). After send, `sent` as in Phase 5.
-- [ ] Manual compose (no AI): `POST /announcements` still creates `draft`; same approve → send. AI is optional on the screen.
-- [ ] Do not call the AI provider from the worker or from Send.
+- [x] `POST /announcements/ai-draft` (leadership) body `{ note: string }` → `{ title, body, notificationPreview }` from the model. **Does not** insert recipient rows. Persist as `status = draft` in the caller’s local.
+- [x] Prompt: informal note → clear title, body, preview ≤ 120 chars.
+- [x] Timeout + error mapping: provider down/slow → 503/504 with message; no announcement row on failure; no worker involvement.
+- [x] `POST /announcements/:id/approve` is the only path `draft → approved`.
+- [x] `POST /announcements/:id/send` **rejects** unless `status === 'approved'` (not `draft`). After send, `sent` as in Phase 5.
+- [x] Manual compose (no AI): `POST /announcements` still creates `draft`; same approve → send. AI is optional on the screen.
+- [x] Do not call the AI provider from the worker or from Send.
 
 ---
 

@@ -11,13 +11,16 @@ import {
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
+  ApiGatewayTimeoutResponse,
   ApiOperation,
+  ApiServiceUnavailableResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import type { AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { AnnouncementsService } from './announcements.service';
+import { AiDraftDto } from './dto/ai-draft.dto';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { SendAnnouncementDto } from './dto/send-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
@@ -33,6 +36,19 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Create a draft announcement in the caller’s local' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateAnnouncementDto) {
     return this.announcements.create(user, dto);
+  }
+
+  @Post('ai-draft')
+  @ApiOperation({
+    summary:
+      'Turn an informal note into a draft via AI. Isolated from send; failures never create a row.',
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'Provider missing, down, or returned an unusable draft',
+  })
+  @ApiGatewayTimeoutResponse({ description: 'AI provider timed out' })
+  createFromNote(@CurrentUser() user: AuthUser, @Body() dto: AiDraftDto) {
+    return this.announcements.createFromNote(user, dto.note);
   }
 
   @Get()
