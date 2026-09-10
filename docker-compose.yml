@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: crewlink
+      POSTGRES_PASSWORD: crewlink
+      POSTGRES_DB: crewlink
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crewlink -d crewlink"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - crewlink
+
+  api:
+    build:
+      context: ./backend
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://crewlink:crewlink@db:5432/crewlink
+      JWT_SECRET: dev-only-change-me
+      JWT_EXPIRES_IN: 8h
+      API_PORT: 3000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      AI_TIMEOUT_MS: 15000
+      WORKER_BATCH_SIZE: 100
+      WORKER_INTERVAL_MS: 2000
+      WORKER_RETRY_DELAY_MS: 5000
+      WORKER_MAX_ATTEMPTS: 5
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crewlink
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - api
+    networks:
+      - crewlink
+
+networks:
+  crewlink:
+
+volumes:
+  pgdata:
