@@ -219,11 +219,11 @@ Unstyled is acceptable. No member UI.
 
 Brief README requires evidence for Rule 1 (cross-local) and Rule 2 (no double send). Automate both.
 
-- [ ] **Cross-local access test:** login as Local 27 leadership (or member); `GET /announcements/:id` (and member GET) for an announcement that belongs to Local 99 → not 200 with that local’s data. Same for a Local 99 member id used against Local 27-only routes. Assert no other-local member PII in the body.
-- [ ] **Member cannot use leadership actions:** member JWT on `POST /announcements/:id/send` (and approve/ai-draft) → 403.
+- [x] **Cross-local access test:** login as Local 27 leadership (or member); `GET /announcements/:id` (and member GET) for an announcement that belongs to Local 99 → not 200 with that local’s data. Same for a Local 99 member id used against Local 27-only routes. Assert no other-local member PII in the body.
+- [x] **Member cannot use leadership actions:** member JWT on `POST /announcements/:id/send` (and approve/ai-draft) → 403.
 - [x] **Double-send test:** create/approve/send; call `POST /announcements/:id/send` a second time; assert no duplicate `announcement_recipients` rows. **Do not** add a concurrent-worker race test; document SKIP LOCKED safety in the README instead.
-- [ ] Seed + compose smoke: login four accounts; member `GET` + `acknowledge` on a sent item in their local; counters increment once (idempotent ack).
-- [ ] Retired/suspended members are not in a new send’s recipient set.
+- [x] Seed + compose smoke: login four accounts; member `GET` + `acknowledge` on a sent item in their local; counters increment once (idempotent ack).
+- [x] Retired/suspended members are not in a new send’s recipient set.
 
 Run these via Nest e2e (`supertest`) against a test DB, and keep equivalent `curl` snippets for the README.
 
@@ -233,22 +233,22 @@ Run these via Nest e2e (`supertest`) against a test DB, and keep equivalent `cur
 
 Short (brief: ~15–20 lines plus the Test Accounts block). Must include:
 
-- [ ] How to run: `docker compose up --build` (migrations + seed command, in order).
-- [ ] How to apply migrations and run the seed if not automatic on boot.
-- [ ] Two logins called out in prose **and** the exact heading below.
-- [ ] Exact heading: `## TEST ACCOUNTS`
-- [ ] Under that heading, a **fenced JSON block** containing:
-  - [ ] both logins for each local (email, password, role, local name/id)
-  - [ ] `existingAnnouncementId` of the pre-sent announcement in the **larger** local
-  - [ ] `otherLocalMemberId` — a member id in the **other** local
-  - [ ] `auth`: method + header style (`POST /auth/login`, then `Authorization: Bearer`)
-  - [ ] `endpoints`: method + path for the handful built (login, create, ai-draft, approve, send, get announcement, me list, me get, acknowledge)
-- [ ] `curl` example: member read + ack flow.
-- [ ] `curl` example: Local 27 login **cannot** read the other local’s announcement / member data.
-- [ ] How Rule 2 was verified: double-send test (and/or curl retry-send). Explain `SELECT FOR UPDATE SKIP LOCKED` (workers cannot claim the same queued row) — not a live race test.
-- [ ] AI: env var for the key; what happens if the provider is down.
-- [ ] Pointer to `DESIGN.md` (what was cut lives at the bottom of that file already).
-- [ ] Export AI chat sessions to repo root when submitting (brief §5 / §6) — not code, but a submission checklist item.
+- [x] How to run: `docker compose up --build` (migrations + seed command, in order).
+- [x] How to apply migrations and run the seed if not automatic on boot.
+- [x] Two logins called out in prose **and** the exact heading below.
+- [x] Exact heading: `## TEST ACCOUNTS`
+- [x] Under that heading, a **fenced JSON block** containing:
+  - [x] both logins for each local (email, password, role, local name/id)
+  - [x] `existingAnnouncementId` of the pre-sent announcement in the **larger** local
+  - [x] `otherLocalMemberId` — a member id in the **other** local
+  - [x] `auth`: method + header style (`POST /auth/login`, then `Authorization: Bearer`)
+  - [x] `endpoints`: method + path for the handful built (login, create, ai-draft, approve, send, get announcement, me list, me get, acknowledge)
+- [x] `curl` example: member read + ack flow.
+- [x] `curl` example: Local 27 login **cannot** read the other local’s announcement / member data.
+- [x] How Rule 2 was verified: double-send test (and/or curl retry-send). Explain `SELECT FOR UPDATE SKIP LOCKED` (workers cannot claim the same queued row) — not a live race test.
+- [x] AI: env var for the key; what happens if the provider is down.
+- [x] Pointer to `DESIGN.md` (what was cut lives at the bottom of that file already).
+- [x] Export AI chat sessions to repo root when submitting (brief §5 / §6) — not code, but a submission checklist item.
 
 ---
 
