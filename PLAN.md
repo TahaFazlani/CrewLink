@@ -109,27 +109,27 @@ All routes below inherit Phase 3 guards. Paths are proposals (see ambiguities).
 
 ### Auth
 
-- [ ] `POST /auth/login` — public — issue JWT.
+- [x] `POST /auth/login` — public — issue JWT.
 
 ### Leadership (role = `leadership`; scoped to caller’s `local_id`)
 
-- [ ] `POST /announcements` — create `draft` with `title`, `body`, optional `notificationPreview`, `needsAck`, optional `classification` (stored for send-time audience; **proposal:** `target_classification text null` on `announcements` — **this column is not in DESIGN.md**; alternative is to pass classification only on send. **Prefer: pass `classification` on send only**, do not add a column unless you want drafts to remember the filter.)
-- [ ] **Judgment — where classification lives:** DESIGN.md does not store it. **Proposal:** `POST /announcements/:id/send` body `{ classification?: string }`. If omitted, all **active** members of the caller’s local. If set, active + that classification. Retired/suspended never included.
-- [ ] `GET /announcements` — list announcements for caller’s local (id, title, status, counters, sentAt). Enough for the one UI to reopen the seeded sent item.
-- [ ] `GET /announcements/:id` — one announcement + counters (`sentCount`, `readCount`, `acknowledgedCount`). 404 if other local.
-- [ ] `PATCH /announcements/:id` — edit `title`/`body`/`notificationPreview`/`needsAck` only while `status = draft`.
-- [ ] `POST /announcements/:id/approve` — `draft → approved`. Reject if not draft.
+- [x] `POST /announcements` — create `draft` with `title`, `body`, optional `notificationPreview`, `needsAck`, optional `classification` (stored for send-time audience; **proposal:** `target_classification text null` on `announcements` — **this column is not in DESIGN.md**; alternative is to pass classification only on send. **Prefer: pass `classification` on send only**, do not add a column unless you want drafts to remember the filter.)
+- [x] **Judgment — where classification lives:** DESIGN.md does not store it. **Proposal:** `POST /announcements/:id/send` body `{ classification?: string }`. If omitted, all **active** members of the caller’s local. If set, active + that classification. Retired/suspended never included.
+- [x] `GET /announcements` — list announcements for caller’s local (id, title, status, counters, sentAt). Enough for the one UI to reopen the seeded sent item.
+- [x] `GET /announcements/:id` — one announcement + counters (`sentCount`, `readCount`, `acknowledgedCount`). 404 if other local.
+- [x] `PATCH /announcements/:id` — edit `title`/`body`/`notificationPreview`/`needsAck` only while `status = draft`.
+- [x] `POST /announcements/:id/approve` — `draft → approved`. Reject if not draft.
 - [ ] `POST /announcements/:id/send` — see Phase 5. Reject if not `approved`. Idempotent if already `sent` (no second recipient insert; unique constraint is the backstop).
-- [ ] Do **not** expose member PII list endpoints for other locals. No “list all members” required for the leadership screen (counts only).
+- [x] Do **not** expose member PII list endpoints for other locals. No “list all members” required for the leadership screen (counts only).
 
 ### Members (inbox for `role = member`; leadership uses leadership routes)
 
 **Approved:** leadership accounts are **not** in the send audience (`role = 'member'` only).
 
-- [ ] `GET /me/announcements` — recipient rows for `member_id = me`, join announcement; only if announcement.local_id == me.local_id (redundant if recipient insert was scoped). Return title, body, needsAck, recipient status, readAt, acknowledgedAt.
-- [ ] `GET /me/announcements/:id` — one; set `read_at` if null and bump `read_count` in the same transaction.
-- [ ] `POST /me/announcements/:id/acknowledge` — set `acknowledged_at` if null; bump `acknowledged_count` once. If `needs_ack` is false, still allow ack (**or** 400 — **proposal: allow**, idempotent).
-- [ ] No RSVP endpoint this slice.
+- [x] `GET /me/announcements` — recipient rows for `member_id = me`, join announcement; only if announcement.local_id == me.local_id (redundant if recipient insert was scoped). Return title, body, needsAck, recipient status, readAt, acknowledgedAt.
+- [x] `GET /me/announcements/:id` — one; set `read_at` if null and bump `read_count` in the same transaction.
+- [x] `POST /me/announcements/:id/acknowledge` — set `acknowledged_at` if null; bump `acknowledged_count` once. If `needs_ack` is false, still allow ack (**or** 400 — **proposal: allow**, idempotent).
+- [x] No RSVP endpoint this slice.
 
 ### Out of slice (do not build unless plan changes)
 

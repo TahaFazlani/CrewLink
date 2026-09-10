@@ -42,7 +42,7 @@ export class TenantScope {
     const qb = this.dataSource.getRepository(entity).createQueryBuilder(alias);
 
     if (meta.tableName === 'announcement_recipients') {
-      qb.innerJoin(`${alias}.announcement`, `${alias}_announcement`);
+      qb.innerJoinAndSelect(`${alias}.announcement`, `${alias}_announcement`);
       qb.andWhere(`${alias}_announcement.localId = :tenantLocalId`, {
         tenantLocalId: localId,
       });
