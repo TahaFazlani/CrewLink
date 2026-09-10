@@ -50,38 +50,38 @@ Approved (2026-09-10), with overrides noted in **bold**.
 
 Four tables from DESIGN.md, plus the denormalized counters and the extra columns the design already named.
 
-- [ ] Migration: `locals` (`id uuid PK`, `name text not null`).
-- [ ] Migration: `users` (login identity) — **judgment, see above** (`id uuid PK`, `email text unique not null`, `password_hash text not null`).
-- [ ] Migration: `members`:
-  - [ ] `id uuid PK`
-  - [ ] `local_id uuid not null → locals`
-  - [ ] `full_name text not null`
-  - [ ] `email text not null`
-  - [ ] `classification text not null`
-  - [ ] `status text not null` check/in-app: `active | retired | suspended`
-  - [ ] `role text not null` check/in-app: `member | leadership`
-  - [ ] `user_id uuid not null unique → users`
-  - [ ] index on `(local_id, status)` for audience queries
-  - [ ] index on `(local_id, classification, status)`
-- [ ] Migration: `announcements`:
-  - [ ] Starting-point fields: `id`, `local_id → locals`, `title`, `body`, `needs_ack boolean not null default false`, `sent_at timestamptz null`, `created_at timestamptz not null default now()`
-  - [ ] Design extras: `requires_attendance boolean not null default false`, `status text not null` (`draft | approved | sent`), `created_by uuid not null → members`
-  - [ ] Denormalized counters: `sent_count int not null default 0`, `read_count int not null default 0`, `acknowledged_count int not null default 0`
-  - [ ] **Judgment:** `notification_preview text null`
-- [ ] Migration: `announcement_recipients`:
-  - [ ] `id uuid PK`
-  - [ ] `announcement_id uuid not null → announcements` (cascade delete OK for this slice)
-  - [ ] `member_id uuid not null → members`
-  - [ ] `status text not null` (`queued | sent | failed`)
-  - [ ] `read_at timestamptz null`
-  - [ ] `acknowledged_at timestamptz null`
-  - [ ] `attendance_response text null` (`coming | not_coming`) — column only, no API this slice
-  - [ ] `sent_at timestamptz null`
-  - [ ] **UNIQUE (`announcement_id`, `member_id`)** — Rule 2 invariant
-  - [ ] **Judgment:** `attempt_count int not null default 0`, `next_attempt_at timestamptz null`
-  - [ ] index on `(status, next_attempt_at)` for the worker
-- [ ] TypeORM entities matching the migrations 1:1. No extra tables beyond `users` unless this plan is revised.
-- [ ] Run migrations against compose Postgres; confirm unique constraint exists in the DB.
+- [x] Migration: `locals` (`id uuid PK`, `name text not null`).
+- [x] Migration: `users` (login identity) — **judgment, see above** (`id uuid PK`, `email text unique not null`, `password_hash text not null`).
+- [x] Migration: `members`:
+  - [x] `id uuid PK`
+  - [x] `local_id uuid not null → locals`
+  - [x] `full_name text not null`
+  - [x] `email text not null`
+  - [x] `classification text not null`
+  - [x] `status text not null` check/in-app: `active | retired | suspended`
+  - [x] `role text not null` check/in-app: `member | leadership`
+  - [x] `user_id uuid not null unique → users`
+  - [x] index on `(local_id, status)` for audience queries
+  - [x] index on `(local_id, classification, status)`
+- [x] Migration: `announcements`:
+  - [x] Starting-point fields: `id`, `local_id → locals`, `title`, `body`, `needs_ack boolean not null default false`, `sent_at timestamptz null`, `created_at timestamptz not null default now()`
+  - [x] Design extras: `requires_attendance boolean not null default false`, `status text not null` (`draft | approved | sent`), `created_by uuid not null → members`
+  - [x] Denormalized counters: `sent_count int not null default 0`, `read_count int not null default 0`, `acknowledged_count int not null default 0`
+  - [x] **Judgment:** `notification_preview text null`
+- [x] Migration: `announcement_recipients`:
+  - [x] `id uuid PK`
+  - [x] `announcement_id uuid not null → announcements` (cascade delete OK for this slice)
+  - [x] `member_id uuid not null → members`
+  - [x] `status text not null` (`queued | sent | failed`)
+  - [x] `read_at timestamptz null`
+  - [x] `acknowledged_at timestamptz null`
+  - [x] `attendance_response text null` (`coming | not_coming`) — column only, no API this slice
+  - [x] `sent_at timestamptz null`
+  - [x] **UNIQUE (`announcement_id`, `member_id`)** — Rule 2 invariant
+  - [x] **Judgment:** `attempt_count int not null default 0`, `next_attempt_at timestamptz null`
+  - [x] index on `(status, next_attempt_at)` for the worker
+- [x] TypeORM entities matching the migrations 1:1. No extra tables beyond `users` unless this plan is revised.
+- [x] Run migrations against compose Postgres; confirm unique constraint exists in the DB.
 
 ---
 
