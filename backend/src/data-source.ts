@@ -8,7 +8,7 @@ import { Local } from './locals/local.entity';
 import { Member } from './members/member.entity';
 import { InitSchema1760000000000 } from './migrations/1760000000000-InitSchema';
 
-config();
+config({ override: true });
 
 export default new DataSource({
   type: 'postgres',

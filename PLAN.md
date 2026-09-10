@@ -189,14 +189,14 @@ Dev seed (pre–Phase 7): `npm run seed:dev` — 2 locals, 4 logins only. Not a 
 
 Re-runnable (wipe-or-upsert documented). Match DESIGN.md / brief numbers.
 
-- [ ] 2 locals: e.g. **Local 27** (larger) and **Local 99** (smaller).
-- [ ] Larger local: **~2,000** members; smaller: **200**.
-- [ ] **3–4 classifications** across both (e.g. Journeyman Wireman, Apprentice 3rd Year, plus 1–2 more). Mix statuses: mostly `active`, some `retired` / `suspended` so a careless unfiltered query is visible.
-- [ ] Per local: **one leadership login** and **one member login** (4 users total) with known emails/passwords.
-- [ ] One **already-sent** announcement in the **larger** local: `status = sent`, `sent_at` set, recipient rows for **active `role = member`** audience (leadership excluded), some `read_at` / `acknowledged_at` so counters are non-zero. Capture this announcement **id** for README.
-- [ ] Capture **one member id from the other local** for the cross-local README curl.
-- [ ] Idempotent: second run does not duplicate locals/members/the seeded announcement (delete-and-reseed or upsert by email).
-- [ ] Wire as `npm run seed` in backend, also runnable after compose is up.
+- [x] 2 locals: e.g. **Local 27** (larger) and **Local 99** (smaller).
+- [x] Larger local: **~2,000** members; smaller: **200**.
+- [x] **3–4 classifications** across both (e.g. Journeyman Wireman, Apprentice 3rd Year, plus 1–2 more). Mix statuses: mostly `active`, some `retired` / `suspended` so a careless unfiltered query is visible.
+- [x] Per local: **one leadership login** and **one member login** (4 users total) with known emails/passwords.
+- [x] One **already-sent** announcement in the **larger** local: `status = sent`, `sent_at` set, recipient rows for **active `role = member`** audience (leadership excluded), some `read_at` / `acknowledged_at` so counters are non-zero. Capture this announcement **id** for README.
+- [x] Capture **one member id from the other local** for the cross-local README curl.
+- [x] Idempotent: second run does not duplicate locals/members/the seeded announcement (delete-and-reseed or upsert by email).
+- [x] Wire as `npm run seed` in backend, also runnable after compose is up.
 
 ---
 
