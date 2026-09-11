@@ -680,7 +680,7 @@ export default function Home() {
               </section>
             ) : null}
 
-            <section className={card}>
+            {/* <section className={card}>
               <div className={cardHead}>
                 <h2 className={cardTitle}>Local</h2>
               </div>
@@ -697,7 +697,7 @@ export default function Home() {
                   see.
                 </p>
               </div>
-            </section>
+            </section> */}
           </div>
         </div>
       </main>
