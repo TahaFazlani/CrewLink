@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   ApiError,
   Announcement,
+  AnnouncementListItem,
   CLASSIFICATIONS,
   MemberSession,
   aiDraft,
@@ -14,6 +17,7 @@ import {
   getLocal,
   getMember,
   getToken,
+  listAnnouncements,
   login as apiLogin,
   patchAnnouncement,
   sendAnnouncement,
@@ -47,6 +51,7 @@ const statusBadge: Record<string, string> = {
 type Pending = "ai" | "approve" | "send" | "load" | null;
 
 export default function Home() {
+  const router = useRouter();
   const [ready, setReady] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [member, setMember] = useState<MemberSession | null>(null);
@@ -62,9 +67,12 @@ export default function Home() {
   const [note, setNote] = useState("");
   const [needsAck, setNeedsAck] = useState(false);
   const [classification, setClassification] = useState("");
-  const [loadId, setLoadId] = useState("b626bc32-066e-4659-b536-e2056305f946");
 
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [announcementList, setAnnouncementList] = useState<
+    AnnouncementListItem[]
+  >([]);
+  const [listError, setListError] = useState("");
   const [aiError, setAiError] = useState("");
   const [formError, setFormError] = useState("");
   const [pending, setPending] = useState<Pending>(null);
@@ -75,6 +83,15 @@ export default function Home() {
     setMember(getMember());
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    if (token && member?.role === "member") {
+      router.replace("/member");
+    }
+  }, [ready, token, member?.role, router]);
 
   useEffect(() => {
     if (!token || !member) {
@@ -92,6 +109,26 @@ export default function Home() {
     setPreview(row.notificationPreview ?? "");
     setNeedsAck(row.needsAck);
   }, []);
+
+  const refreshAnnouncementList = useCallback(async () => {
+    if (!token || member?.role !== "leadership") {
+      setAnnouncementList([]);
+      return;
+    }
+    try {
+      setListError("");
+      setAnnouncementList(await listAnnouncements());
+    } catch (err) {
+      setAnnouncementList([]);
+      setListError(
+        err instanceof Error ? err.message : "Could not load announcements",
+      );
+    }
+  }, [token, member?.role]);
+
+  useEffect(() => {
+    void refreshAnnouncementList();
+  }, [refreshAnnouncementList]);
 
   const announcementId = announcement?.id;
   const announcementStatus = announcement?.status;
@@ -117,6 +154,9 @@ export default function Home() {
       setSession(result.accessToken, result.member);
       setToken(result.accessToken);
       setMember(result.member);
+      if (result.member.role === "member") {
+        router.replace("/member");
+      }
     } catch (err) {
       setLoginError(err instanceof ApiError ? err.message : "Login failed");
     }
@@ -127,6 +167,8 @@ export default function Home() {
     setToken(null);
     setMember(null);
     setAnnouncement(null);
+    setAnnouncementList([]);
+    setListError("");
     setTitle("");
     setBody("");
     setPreview("");
@@ -165,6 +207,7 @@ export default function Home() {
     setPending("ai");
     try {
       applyAnnouncement(await aiDraft(note.trim()));
+      await refreshAnnouncementList();
     } catch (err) {
       if (
         err instanceof ApiError &&
@@ -192,6 +235,7 @@ export default function Home() {
     try {
       const draft = await persistDraftIfNeeded();
       applyAnnouncement(await approveAnnouncement(draft.id));
+      await refreshAnnouncementList();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Approve failed");
     } finally {
@@ -209,6 +253,7 @@ export default function Home() {
     try {
       await sendAnnouncement(announcement.id, classification || undefined);
       applyAnnouncement(await getAnnouncement(announcement.id));
+      await refreshAnnouncementList();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Send failed");
     } finally {
@@ -216,13 +261,12 @@ export default function Home() {
     }
   }
 
-  async function onLoadExisting(event: FormEvent) {
-    event.preventDefault();
+  async function onSelectAnnouncement(id: string) {
     setFormError("");
     setAiError("");
     setPending("load");
     try {
-      applyAnnouncement(await getAnnouncement(loadId.trim()));
+      applyAnnouncement(await getAnnouncement(id));
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : "Could not load announcement",
@@ -282,9 +326,23 @@ export default function Home() {
               <button type="submit" className={buttonPrimary}>
                 Log in
               </button>
+              <p className={`${hint} text-center`}>
+                Member?{" "}
+                <Link href="/member" className="text-blue-600 hover:underline">
+                  Go to inbox
+                </Link>
+              </p>
             </div>
           </form>
         </div>
+      </main>
+    );
+  }
+
+  if (member.role !== "leadership") {
+    return (
+      <main className="grid min-h-screen place-items-center text-sm text-slate-500">
+        Redirecting…
       </main>
     );
   }
@@ -330,13 +388,6 @@ export default function Home() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 pt-6 pb-16">
-        {member.role !== "leadership" ? (
-          <p className={`mb-4 ${alertError}`}>
-            This screen is for leadership. Member logins get 403 on draft,
-            approve, and send.
-          </p>
-        ) : null}
-
         <div className="grid items-start gap-5 lg:grid-cols-[1.6fr_1fr]">
           <div className="grid gap-5">
             <section className={card}>
@@ -575,26 +626,59 @@ export default function Home() {
               </section>
             ) : null}
 
-            <section className={card}>
-              <div className={cardHead}>
-                <h2 className={cardTitle}>Open by id</h2>
-              </div>
-              <form onSubmit={onLoadExisting} className="grid gap-3 p-5">
-                <input
-                  className={`${input} font-mono text-xs`}
-                  value={loadId}
-                  onChange={(e) => setLoadId(e.target.value)}
-                  aria-label="Announcement id"
-                />
-                <button type="submit" className={button} disabled={busy}>
-                  {pending === "load" ? "Loading…" : "Load announcement"}
-                </button>
-                <p className={hint}>
-                  Watch the seeded announcement’s counters without sending
-                  again.
-                </p>
-              </form>
-            </section>
+            {member.role === "leadership" ? (
+              <section className={card}>
+                <div className={cardHead}>
+                  <h2 className={cardTitle}>Announcements</h2>
+                  <button
+                    type="button"
+                    className={`${button} py-1 text-xs`}
+                    onClick={() => void refreshAnnouncementList()}
+                    disabled={busy}
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div className="grid gap-3 p-5">
+                  {listError ? <p className={alertError}>{listError}</p> : null}
+                  <div className="grid gap-1.5">
+                    <label className={label} htmlFor="announcement-select">
+                      Select announcement
+                    </label>
+                    <select
+                      id="announcement-select"
+                      className={input}
+                      value={announcement?.id ?? ""}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        if (id) {
+                          void onSelectAnnouncement(id);
+                        }
+                      }}
+                      disabled={busy || announcementList.length === 0}
+                    >
+                      <option value="">
+                        {announcementList.length === 0
+                          ? "No announcements yet"
+                          : pending === "load"
+                            ? "Loading…"
+                            : "Choose an announcement…"}
+                      </option>
+                      {announcementList.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title || "(untitled)"} · {item.status} ·{" "}
+                          {item.sentCount} sent
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className={hint}>
+                    Pick an announcement to open it and watch delivery counters
+                    without sending again.
+                  </p>
+                </div>
+              </section>
+            ) : null}
 
             <section className={card}>
               <div className={cardHead}>

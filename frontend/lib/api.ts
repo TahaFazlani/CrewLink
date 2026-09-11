@@ -29,6 +29,27 @@ export type Announcement = {
   acknowledgedCount: number;
 };
 
+export type AnnouncementListItem = {
+  id: string;
+  title: string;
+  status: "draft" | "approved" | "sent";
+  sentAt: string | null;
+  sentCount: number;
+  readCount: number;
+  acknowledgedCount: number;
+};
+
+export type MemberAnnouncement = {
+  id: string;
+  title: string;
+  body: string;
+  needsAck: boolean;
+  notificationPreview: string | null;
+  recipientStatus: "queued" | "sent" | "failed";
+  readAt: string | null;
+  acknowledgedAt: string | null;
+};
+
 function apiBase(): string {
   return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 }
@@ -143,6 +164,10 @@ export function aiDraft(note: string) {
   });
 }
 
+export function listAnnouncements() {
+  return request<AnnouncementListItem[]>("/announcements");
+}
+
 export function getAnnouncement(id: string) {
   return request<Announcement>(`/announcements/${id}`);
 }
@@ -172,5 +197,19 @@ export function sendAnnouncement(id: string, classification?: string) {
   return request<Announcement>(`/announcements/${id}/send`, {
     method: "POST",
     body: JSON.stringify(classification ? { classification } : {}),
+  });
+}
+
+export function listMyAnnouncements() {
+  return request<MemberAnnouncement[]>("/me/announcements");
+}
+
+export function getMyAnnouncement(id: string) {
+  return request<MemberAnnouncement>(`/me/announcements/${id}`);
+}
+
+export function acknowledgeMyAnnouncement(id: string) {
+  return request<MemberAnnouncement>(`/me/announcements/${id}/acknowledge`, {
+    method: "POST",
   });
 }
