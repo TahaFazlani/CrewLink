@@ -3,7 +3,9 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN apk add --no-cache --virtual .gyp python3 make g++ && \
+    npm ci && \
+    apk del .gyp
 
 COPY . .
 RUN npm run build
