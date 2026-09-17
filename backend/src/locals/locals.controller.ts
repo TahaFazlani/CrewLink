@@ -1,19 +1,18 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { TenantScope } from '../auth/tenant-scope';
-import { Local } from './local.entity';
+import { LocalsService } from './locals.service';
 
 @Controller('locals')
 @ApiTags('locals')
 @ApiBearerAuth('bearer')
 export class LocalsController {
-  constructor(private readonly tenant: TenantScope) {}
+  constructor(private readonly locals: LocalsService) {}
 
   @Get(':id')
   @ApiOperation({
     summary: 'Get a local by id (caller’s local only; other locals 404)',
   })
-  getOne(@Param('id') id: string) {
-    return this.tenant.getByIdOrNotFound(Local, id);
+  getOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.locals.get(id);
   }
 }

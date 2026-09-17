@@ -1,22 +1,19 @@
 import 'reflect-metadata';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'node:crypto';
-import { AnnouncementRecipient } from '../announcements/announcement-recipient.entity';
-import { Announcement } from '../announcements/announcement.entity';
-import { User } from '../auth/user.entity';
-import type { MemberRole, MemberStatus } from '../common/enums';
+import { AnnouncementRecipient } from '../announcements/entities/announcement-recipient.entity';
+import { Announcement } from '../announcements/entities/announcement.entity';
+import { User } from '../auth/entities/user.entity';
+import {
+  MEMBER_CLASSIFICATIONS,
+  type MemberRole,
+  type MemberStatus,
+} from '../common/enums';
 import dataSource from '../data-source';
-import { Local } from '../locals/local.entity';
-import { Member } from '../members/member.entity';
+import { Local } from '../locals/entities/local.entity';
+import { Member } from '../members/entities/member.entity';
 
 const PASSWORD = 'password123';
-
-const CLASSIFICATIONS = [
-  'Journeyman Wireman',
-  'Apprentice 3rd Year',
-  'Sheet Metal Worker',
-  'Transit Operator',
-] as const;
 
 const LOGIN_ACCOUNTS = [
   {
@@ -151,7 +148,8 @@ async function insertRoster(
       localId: local.id,
       fullName: `Roster ${local.name} #${i}`,
       email,
-      classification: CLASSIFICATIONS[(i - 1) % CLASSIFICATIONS.length],
+      classification:
+        MEMBER_CLASSIFICATIONS[(i - 1) % MEMBER_CLASSIFICATIONS.length],
       status: statusForIndex(i),
       role: 'member',
       userId,
@@ -193,7 +191,8 @@ async function seedSentAnnouncement(
         createdById: createdBy.id,
         title: SEED_ANNOUNCEMENT_TITLE,
         body: 'Emergency meeting Thursday 6pm at the hall. Contractor is pulling crews off the westside job. Everyone needs to be there — this is the third time.',
-        notificationPreview: 'Thu 6pm hall: emergency mtg, westside contractor crews.',
+        notificationPreview:
+          'Thu 6pm hall: emergency mtg, westside contractor crews.',
         needsAck: true,
         requiresAttendance: false,
         status: 'sent',
@@ -273,18 +272,8 @@ async function main(): Promise<void> {
     });
   }
 
-  await insertRoster(
-    local27,
-    'roster.l27.',
-    LOCAL_27_ROSTER,
-    passwordHash,
-  );
-  await insertRoster(
-    local99,
-    'roster.l99.',
-    LOCAL_99_ROSTER,
-    passwordHash,
-  );
+  await insertRoster(local27, 'roster.l27.', LOCAL_27_ROSTER, passwordHash);
+  await insertRoster(local99, 'roster.l99.', LOCAL_99_ROSTER, passwordHash);
 
   const announcement = await seedSentAnnouncement(
     local27,
@@ -306,8 +295,16 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         locals: {
-          local27: { id: local27.id, name: local27.name, members: memberCount27 },
-          local99: { id: local99.id, name: local99.name, members: memberCount99 },
+          local27: {
+            id: local27.id,
+            name: local27.name,
+            members: memberCount27,
+          },
+          local99: {
+            id: local99.id,
+            name: local99.name,
+            members: memberCount99,
+          },
         },
         accounts,
         existingAnnouncementId: announcement.id,

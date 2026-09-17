@@ -1,6 +1,7 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AI_DRAFT_PORT } from './ai-draft.port';
 import { AiDraftService } from './ai-draft.service';
 
 @Module({
@@ -12,7 +13,10 @@ import { AiDraftService } from './ai-draft.service';
       }),
     }),
   ],
-  providers: [AiDraftService],
-  exports: [AiDraftService],
+  providers: [
+    AiDraftService,
+    { provide: AI_DRAFT_PORT, useExisting: AiDraftService },
+  ],
+  exports: [AI_DRAFT_PORT],
 })
 export class AiModule {}

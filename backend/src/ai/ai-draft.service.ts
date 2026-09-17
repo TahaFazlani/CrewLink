@@ -7,12 +7,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
-
-export type AiDraftFields = {
-  title: string;
-  body: string;
-  notificationPreview: string;
-};
+import type { AiDraftFields, AiDraftPort } from './ai-draft.port';
 
 const SYSTEM_PROMPT = `You turn informal notes from union leadership into a clear official announcement.
 Return JSON only with keys: title, body, notificationPreview.
@@ -21,8 +16,12 @@ Return JSON only with keys: title, body, notificationPreview.
 - notificationPreview: push preview, 120 characters or fewer
 Do not include markdown fences or extra keys.`;
 
+type ChatCompletionResponse = {
+  choices?: Array<{ message?: { content?: unknown } }>;
+};
+
 @Injectable()
-export class AiDraftService {
+export class AiDraftService implements AiDraftPort {
   constructor(
     private readonly http: HttpService,
     private readonly config: ConfigService,
@@ -39,13 +38,12 @@ export class AiDraftService {
     const model = this.config.get<string>('OPENAI_MODEL', 'gpt-4o-mini');
     const timeoutMs = Number(this.config.get('AI_TIMEOUT_MS', 15000));
     const baseUrl = (
-      this.config.get<string>('OPENAI_BASE_URL') ??
-      'https://api.openai.com/v1'
+      this.config.get<string>('OPENAI_BASE_URL') ?? 'https://api.openai.com/v1'
     ).replace(/\/$/, '');
 
     try {
       const response = await firstValueFrom(
-        this.http.post(
+        this.http.post<ChatCompletionResponse>(
           `${baseUrl}/chat/completions`,
           {
             model,

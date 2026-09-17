@@ -1,22 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   ApiError,
   MemberAnnouncement,
-  MemberSession,
   acknowledgeMyAnnouncement,
-  clearSession,
   getLocal,
-  getMember,
   getMyAnnouncement,
-  getToken,
   listMyAnnouncements,
   login as apiLogin,
-  setSession,
 } from "../../lib/api";
+import {
+  clearSession,
+  getMember,
+  getToken,
+  setSession,
+  type MemberSession,
+} from "../../lib/session";
+import { LoginForm } from "../../components/login-form";
 
 const card = "rounded-lg border border-slate-200 bg-white shadow-sm";
 const cardHead =
@@ -186,56 +188,19 @@ export default function MemberInboxPage() {
 
   if (!token || !member || member.role !== "member") {
     return (
-      <main className="grid min-h-screen place-items-center p-5">
-        <div className="w-full max-w-sm">
-          <div className="mb-4 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">CrewLink</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Member inbox. Announcements sent to your local appear here.
-            </p>
-          </div>
-          <form onSubmit={onLogin} className={card}>
-            <div className="grid gap-4 p-5">
-              <div className="grid gap-1.5">
-                <label className={label} htmlFor="email">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className={input}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="username"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label className={label} htmlFor="password">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className={input}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-              </div>
-              {loginError ? <p className={alertError}>{loginError}</p> : null}
-              <button type="submit" className={buttonPrimary}>
-                Log in
-              </button>
-              <p className={`${hint} text-center`}>
-                Leadership?{" "}
-                <Link href="/" className="text-blue-600 hover:underline">
-                  Go to compose
-                </Link>
-              </p>
-            </div>
-          </form>
-        </div>
-      </main>
+      <LoginForm
+        title="CrewLink"
+        subtitle="Member inbox. Announcements sent to your local appear here."
+        email={email}
+        password={password}
+        error={loginError}
+        alternateLabel="Leadership?"
+        alternateHref="/"
+        alternateText="Go to compose"
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onSubmit={onLogin}
+      />
     );
   }
 

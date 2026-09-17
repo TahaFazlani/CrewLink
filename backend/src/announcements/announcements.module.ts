@@ -1,21 +1,24 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
-import { AnnouncementRecipient } from './announcement-recipient.entity';
-import { Announcement } from './announcement.entity';
 import { AnnouncementsController } from './announcements.controller';
-import { AnnouncementsService } from './announcements.service';
-import { MeAnnouncementsController } from './me-announcements.controller';
+import { AnnouncementRecipient } from './entities/announcement-recipient.entity';
+import { Announcement } from './entities/announcement.entity';
+import { AnnouncementSendService } from './services/announcement-send.service';
+import { LeadershipAnnouncementsService } from './services/leadership-announcements.service';
+import { MemberInboxService } from './services/member-inbox.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Announcement, AnnouncementRecipient]),
-    AuthModule,
     AiModule,
   ],
-  controllers: [AnnouncementsController, MeAnnouncementsController],
-  providers: [AnnouncementsService],
+  controllers: [AnnouncementsController],
+  providers: [
+    LeadershipAnnouncementsService,
+    AnnouncementSendService,
+    MemberInboxService,
+  ],
   exports: [TypeOrmModule],
 })
 export class AnnouncementsModule {}
