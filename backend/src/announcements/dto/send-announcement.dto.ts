@@ -1,5 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
+import {
+  MEMBER_CLASSIFICATIONS,
+  type MemberClassification,
+} from '../../common/enums';
 
 export class SendAnnouncementDto {
   @ApiPropertyOptional({
@@ -7,7 +11,6 @@ export class SendAnnouncementDto {
       'If set, only active members with this classification are queued. Omit for all active members.',
   })
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  classification?: string;
+  @IsIn(MEMBER_CLASSIFICATIONS)
+  classification?: MemberClassification;
 }

@@ -3,9 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { Member } from '../members/member.entity';
-import { LoginDto } from './login.dto';
-import { User } from './user.entity';
+import { Member } from '../members/entities/member.entity';
+import { LoginDto } from './dto/login.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +27,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     const member = await this.members.findOne({ where: { userId: user.id } });
-    if (!member) {
+    if (!member || member.status !== 'active') {
       throw new UnauthorizedException();
     }
 

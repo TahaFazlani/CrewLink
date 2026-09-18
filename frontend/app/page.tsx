@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
@@ -8,21 +7,23 @@ import {
   Announcement,
   AnnouncementListItem,
   CLASSIFICATIONS,
-  MemberSession,
   aiDraft,
   approveAnnouncement,
-  clearSession,
   createAnnouncement,
   getAnnouncement,
-  getLocal,
-  getMember,
-  getToken,
   listAnnouncements,
   login as apiLogin,
   patchAnnouncement,
   sendAnnouncement,
-  setSession,
 } from "../lib/api";
+import {
+  clearSession,
+  getMember,
+  getToken,
+  setSession,
+  type MemberSession,
+} from "../lib/session";
+import { LoginForm } from "../components/login-form";
 
 const POLL_MS = 4000;
 
@@ -55,7 +56,6 @@ export default function Home() {
   const [ready, setReady] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [member, setMember] = useState<MemberSession | null>(null);
-  const [localName, setLocalName] = useState<string>("");
 
   const [email, setEmail] = useState("leadership.27@crewlink.local");
   const [password, setPassword] = useState("password123");
@@ -93,15 +93,6 @@ export default function Home() {
     }
   }, [ready, token, member?.role, router]);
 
-  useEffect(() => {
-    if (!token || !member) {
-      return;
-    }
-    getLocal(member.localId)
-      .then((local) => setLocalName(local.name))
-      .catch(() => setLocalName(member.localId));
-  }, [token, member]);
-
   const applyAnnouncement = useCallback((row: Announcement) => {
     setAnnouncement(row);
     setTitle(row.title);
@@ -137,13 +128,35 @@ export default function Home() {
     if (!announcementId || announcementStatus !== "sent") {
       return;
     }
-    const tick = () => {
-      getAnnouncement(announcementId)
-        .then(applyAnnouncement)
-        .catch(() => undefined);
+    let cancelled = false;
+    let delay = POLL_MS;
+    let handle: number;
+
+    const schedule = () => {
+      handle = window.setTimeout(() => void tick(), delay);
     };
-    const handle = window.setInterval(tick, POLL_MS);
-    return () => window.clearInterval(handle);
+
+    const tick = async () => {
+      if (document.visibilityState === "hidden") {
+        schedule();
+        return;
+      }
+      try {
+        applyAnnouncement(await getAnnouncement(announcementId));
+        delay = POLL_MS;
+      } catch {
+        delay = Math.min(delay * 2, 30000);
+      }
+      if (!cancelled) {
+        schedule();
+      }
+    };
+
+    schedule();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
   }, [announcementId, announcementStatus, applyAnnouncement]);
 
   async function onLogin(event: FormEvent) {
@@ -286,56 +299,19 @@ export default function Home() {
 
   if (!token || !member) {
     return (
-      <main className="grid min-h-screen place-items-center p-5">
-        <div className="w-full max-w-sm">
-          <div className="mb-4 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">CrewLink</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Leadership sign-in. Announcements are scoped to your local.
-            </p>
-          </div>
-          <form onSubmit={onLogin} className={card}>
-            <div className="grid gap-4 p-5">
-              <div className="grid gap-1.5">
-                <label className={label} htmlFor="email">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className={input}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="username"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label className={label} htmlFor="password">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className={input}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-              </div>
-              {loginError ? <p className={alertError}>{loginError}</p> : null}
-              <button type="submit" className={buttonPrimary}>
-                Log in
-              </button>
-              <p className={`${hint} text-center`}>
-                Member?{" "}
-                <Link href="/member" className="text-blue-600 hover:underline">
-                  Go to inbox
-                </Link>
-              </p>
-            </div>
-          </form>
-        </div>
-      </main>
+      <LoginForm
+        title="CrewLink"
+        subtitle="Leadership sign-in. Announcements are scoped to your local."
+        email={email}
+        password={password}
+        error={loginError}
+        alternateLabel="Member?"
+        alternateHref="/member"
+        alternateText="Go to inbox"
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onSubmit={onLogin}
+      />
     );
   }
 
@@ -680,24 +656,6 @@ export default function Home() {
               </section>
             ) : null}
 
-            {/* <section className={card}>
-              <div className={cardHead}>
-                <h2 className={cardTitle}>Local</h2>
-              </div>
-              <div className="grid gap-2 p-5">
-                <p className="text-sm font-semibold">{localName || "…"}</p>
-                <p className="font-mono text-xs break-all text-slate-500">
-                  {member.localId}
-                </p>
-                <p className="text-xs leading-relaxed text-slate-600">
-                  Read-only by design. There is no picker for other locals: the
-                  API derives the local from your JWT and never trusts a
-                  client-supplied <span className="font-mono">local_id</span>,
-                  so a picker here could not change what you are allowed to
-                  see.
-                </p>
-              </div>
-            </section> */}
           </div>
         </div>
       </main>

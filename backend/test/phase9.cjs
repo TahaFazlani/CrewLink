@@ -12,13 +12,13 @@ const request = require('supertest');
 const { NestFactory } = require('@nestjs/core');
 const { ValidationPipe } = require('@nestjs/common');
 const { AppModule } = require('../dist/app.module');
-const { Local } = require('../dist/locals/local.entity');
-const { User } = require('../dist/auth/user.entity');
-const { Member } = require('../dist/members/member.entity');
-const { Announcement } = require('../dist/announcements/announcement.entity');
+const { Local } = require('../dist/locals/entities/local.entity');
+const { User } = require('../dist/auth/entities/user.entity');
+const { Member } = require('../dist/members/entities/member.entity');
+const { Announcement } = require('../dist/announcements/entities/announcement.entity');
 const {
   AnnouncementRecipient,
-} = require('../dist/announcements/announcement-recipient.entity');
+} = require('../dist/announcements/entities/announcement-recipient.entity');
 const { DataSource } = require('typeorm');
 
 const PASSWORD = 'password123';

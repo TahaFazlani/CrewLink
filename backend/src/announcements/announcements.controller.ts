@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -16,29 +17,38 @@ import {
   ApiServiceUnavailableResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import type { AuthUser } from '../auth/auth-user';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { Roles } from '../auth/roles.decorator';
-import { AnnouncementsService } from './announcements.service';
+import type { AuthUser } from '../auth/models/auth-user';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { AiDraftDto } from './dto/ai-draft.dto';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { SendAnnouncementDto } from './dto/send-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
+import { AnnouncementSendService } from './services/announcement-send.service';
+import { LeadershipAnnouncementsService } from './services/leadership-announcements.service';
+import { MemberInboxService } from './services/member-inbox.service';
 
-@Controller('announcements')
+@Controller()
 @ApiTags('announcements')
 @ApiBearerAuth('bearer')
-@Roles('leadership')
 export class AnnouncementsController {
-  constructor(private readonly announcements: AnnouncementsService) {}
+  constructor(
+    private readonly leadership: LeadershipAnnouncementsService,
+    private readonly sender: AnnouncementSendService,
+    private readonly inbox: MemberInboxService,
+  ) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Create a draft announcement in the caller’s local' })
+  @Post('announcements')
+  @Roles('leadership')
+  @ApiOperation({
+    summary: 'Create a draft announcement in the caller’s local',
+  })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateAnnouncementDto) {
-    return this.announcements.create(user, dto);
+    return this.leadership.create(user, dto);
   }
 
-  @Post('ai-draft')
+  @Post('announcements/ai-draft')
+  @Roles('leadership')
   @ApiOperation({
     summary:
       'Turn an informal note into a draft via AI. Isolated from send; failures never create a row.',
@@ -48,38 +58,49 @@ export class AnnouncementsController {
   })
   @ApiGatewayTimeoutResponse({ description: 'AI provider timed out' })
   createFromNote(@CurrentUser() user: AuthUser, @Body() dto: AiDraftDto) {
-    return this.announcements.createFromNote(user, dto.note);
+    return this.leadership.createFromNote(user, dto.note);
   }
 
-  @Get()
+  @Get('announcements')
+  @Roles('leadership')
   @ApiOperation({
-    summary: 'List announcements for the caller’s local (counters, no recipient rows)',
+    summary:
+      'List announcements for the caller’s local (counters, no recipient rows)',
   })
   list() {
-    return this.announcements.listForLeadership();
+    return this.leadership.list();
   }
 
-  @Get(':id')
+  @Get('announcements/:id')
+  @Roles('leadership')
   @ApiOperation({
     summary: 'Get one announcement and counters; other locals 404',
   })
-  getOne(@Param('id') id: string) {
-    return this.announcements.getForLeadership(id);
+  getOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.leadership.get(id);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Edit title/body/preview/needsAck while status is draft' })
-  update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
-    return this.announcements.updateDraft(id, dto);
+  @Patch('announcements/:id')
+  @Roles('leadership')
+  @ApiOperation({
+    summary: 'Edit title/body/preview/needsAck while status is draft',
+  })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAnnouncementDto,
+  ) {
+    return this.leadership.updateDraft(id, dto);
   }
 
-  @Post(':id/approve')
+  @Post('announcements/:id/approve')
+  @Roles('leadership')
   @ApiOperation({ summary: 'Move a draft to approved (required before send)' })
-  approve(@Param('id') id: string) {
-    return this.announcements.approve(id);
+  approve(@Param('id', ParseUUIDPipe) id: string) {
+    return this.leadership.approve(id);
   }
 
-  @Post(':id/send')
+  @Post('announcements/:id/send')
+  @Roles('leadership')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary:
@@ -90,9 +111,40 @@ export class AnnouncementsController {
   })
   send(
     @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SendAnnouncementDto = {},
   ) {
-    return this.announcements.send(user, id, dto);
+    return this.sender.send(user, id, dto);
+  }
+
+  @Get('me/announcements')
+  @Roles('member')
+  @ApiOperation({
+    summary: 'List announcements sent to the authenticated member',
+  })
+  listMine(@CurrentUser() user: AuthUser) {
+    return this.inbox.list(user);
+  }
+
+  @Get('me/announcements/:id')
+  @Roles('member')
+  @ApiOperation({
+    summary: 'Read one inbox announcement; marks it read once',
+  })
+  getMine(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inbox.get(user, id);
+  }
+
+  @Post('me/announcements/:id/acknowledge')
+  @Roles('member')
+  @ApiOperation({ summary: 'Acknowledge an inbox announcement once' })
+  acknowledge(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inbox.acknowledge(user, id);
   }
 }

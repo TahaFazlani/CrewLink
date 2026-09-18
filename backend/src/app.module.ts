@@ -6,13 +6,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiModule } from './ai/ai.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { RolesGuard } from './auth/roles.guard';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
 import { LocalsModule } from './locals/locals.module';
 import { MembersModule } from './members/members.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { TenantModule } from './tenant/tenant.module';
 
 @Module({
   imports: [
@@ -28,6 +28,7 @@ import { NotificationsModule } from './notifications/notifications.module';
       }),
     }),
     AuthModule,
+    TenantModule,
     MembersModule,
     LocalsModule,
     AnnouncementsModule,
@@ -36,7 +37,6 @@ import { NotificationsModule } from './notifications/notifications.module';
   ],
   controllers: [AppController],
   providers: [
-    AppService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

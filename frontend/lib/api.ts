@@ -1,5 +1,4 @@
-const TOKEN_KEY = "crewlink.token";
-const MEMBER_KEY = "crewlink.member";
+import { clearSession, getToken, type MemberSession } from "./session";
 
 export const CLASSIFICATIONS = [
   "Journeyman Wireman",
@@ -8,12 +7,7 @@ export const CLASSIFICATIONS = [
   "Transit Operator",
 ] as const;
 
-export type MemberSession = {
-  id: string;
-  localId: string;
-  role: "member" | "leadership";
-  fullName: string;
-};
+export type { MemberSession } from "./session";
 
 export type Announcement = {
   id: string;
@@ -51,39 +45,7 @@ export type MemberAnnouncement = {
 };
 
 function apiBase(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-}
-
-export function getToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function getMember(): MemberSession | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  const raw = localStorage.getItem(MEMBER_KEY);
-  if (!raw) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw) as MemberSession;
-  } catch {
-    return null;
-  }
-}
-
-export function setSession(token: string, member: MemberSession): void {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(MEMBER_KEY, JSON.stringify(member));
-}
-
-export function clearSession(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(MEMBER_KEY);
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 }
 
 export class ApiError extends Error {
@@ -118,6 +80,9 @@ async function request<T>(
     }
   }
   if (!res.ok) {
+    if (res.status === 401) {
+      clearSession();
+    }
     const message =
       typeof data === "object" &&
       data !== null &&
